@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=9">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>人脸注册</title>
+  <link href="/static/css/bootstrap.css" rel="stylesheet">
+  <link href="/static/css/font-awesome.css" rel="stylesheet">
+
+</head>
+
+<body>
+  <div class="container">
+    <div class="row">
+      <div>
+        <form class="needs-validation" novalidate>
+          <h2 class="form-signin-heading">
+            <i class="fa">
+              Face-signup
+            </i>
+          </h2>
+          <div class="lead">注册人脸</div>
+
+
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text">姓名</span>
+            </div>
+            <input id="name" type="text" name="name" class="form-control" placeholder="姓名" required autofocus>
+          </div>
+
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text">学号/学工号</span>
+            </div>
+            <input type="number" id="userID" name="userID" class="form-control" placeholder="学号/学工号" required>
+          </div>
+
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text">IC卡号</span>
+            </div>
+            <input type="number" id="cardId" name="ICID" class="form-control" id="ICID" placeholder="IC卡ID" required>
+          </div>
+
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text">人脸图像</span>
+            </div>
+            <input id="faceimg" type="file" class="form-control" accept="image/*" name="faceimg" required>
+          </div>
+
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text">性别</span>
+            </div>
+            <div class="form-control " id="gender">
+              <label for="genderMan">男</label>
+              <input type="radio" id="genderMan" name="gender" value="1" checked>
+              <label for="genderFeman">女</label>
+              <input type="radio" id="genderFeman" name="gender" value="0">
+            </div>
+          </div>
+
+          <button class="btn btn-lg btn-primary btn-block" type="submit">提交注册</button>
+        </form>
+
+
+        <button class="btn btn-lg btn-primary btn-block" id="reflashID">刷新IC卡检测</button>
+
+        <div class="input-group mb-3">
+          <div class="input-group-prepend">
+
+            <span class="input-group-text">结果</span>
+          </div>
+          <input type="text" id="result" class="form-control" placeholder="unknown" readonly>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    window.onload = main;
+    const HardwareType = {
+      DEFAULT: 0,
+      CAMERA: 1,
+      IDREADER: 2,
+      ATLAS200: 3,
+      WEBUI: 4,
+      GATEMANG: 5,
+      MOTOR: 6,
+      FACEREG: 7,
+      /*face register, weiui*/
+    }
+    const MessageCtlType = {
+      NULLMESSAGE: 0,
+      CARDID: 1,
+      USERID: 2,
+      GATECONTROL: 3,
+      NEWUSER: 4,
+      REFLASHIC: 5,
+      CONTINUE: 6,
+      AUTH: 7,
+      USERDATA: 8,
+      SHOWUSER: 9,
+      USERPK: 10,
+    }
+    const url = "ws://192.168.1.229:8080/ws"
+    const storImgUrl = "http://192.168.1.229:8080/storImg"
+    var poolID = "123456"
+    var webUIInfo = {
+      "poolID": poolID,
+      "hwType": HardwareType.WEBUI
+    }
+    var msgCarrier = {
+      "ctlType": MessageCtlType.NEWUSER,
+      "body": {
+        "name": "",
+        "user_id": "",
+        "card_id": "",
+        "gender": true,
+        "face_img_name": ""
+      }
+    }
+
+    var msgReflashIC = {
+      "ctlType": MessageCtlType.REFLASHIC,
+      "body": ""
+    }
+
+    var Socket = new WebSocket(url);
+    //auth msg
+    //TODO opened flag?
+    Socket.onopen = function () {
+      Socket.send(JSON.stringify(webUIInfo))
+    }
+    Socket.onmessage = function (msg) {
+      msg = JSON.parse(msg.data)
+      switch (msg.ctlType) {
+        case MessageCtlType.CARDID: {
+          document.getElementById('cardId').value = msg.body.card_id
+          break;
+        }
+        case MessageCtlType.CONTINUE: {
+          document.getElementById('result').value = "SUCCESS"
+          break;
+        }
+        case MessageCtlType.SHOWUSER: {
+          document.getElementById('result').value = "SUCCESS"
+          break;
+        }
+
+        default:
+          alert(msg)
+          break;
+      }
+      console.log(msg)
+    }
+
+    //this file used to change the file name to timestamp
+    let mirrorFile;
+
+    function main() {
+
+
+      let submit = document.getElementById("submit")
+      let reflashIC = document.getElementById("reflashID")
+      let forms = document.getElementsByClassName("needs-validation")
+
+
+      reflashIC.addEventListener('click', reflashIc)
+
+      //?
+      // Loop over them and prevent submission
+      var validation = Array.prototype.filter.call(forms, function (form) {
+        form.addEventListener('submit', function (event) {
+
+          event.preventDefault();
+          event.stopPropagation();
+
+          if (form.checkValidity() === false) {
+
+          } else {
+            // send data here
+            console.log("good")
+            // used timestamp as file name
+            let file = document.getElementById("faceimg").files[0]
+            let timestamp3 = new Date().getTime();
+            let extName = file.name.split(".").pop()
+            mirrorFile = new File([file], new Date().getTime() + "." + extName, {
+              type: file.type
+            });
+            sendImg()
+          }
+          form.classList.add('was-validated');
+        }, false);
+      });
+
+
+    }
+
+    function reflashIc(event) {
+      Socket.send(JSON.stringify(msgReflashIC))
+    }
+
+    function sendImg() {
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', storImgUrl, true);
+      var formData = new FormData();
+      formData.append('face_img_name', mirrorFile);
+
+      // xhr.setRequestHeader("Content-type", "image/*");
+      xhr.send(formData);
+
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState == 4) {
+          if (xhr.status == 200) {
+            sendUserData()
+          }
+        }
+      }
+    }
+
+    function sendUserData() {
+      let nameBar = document.getElementById("name")
+      let userIdBar = document.getElementById("userID")
+      let cardIdBar = document.getElementById("cardId")
+      let femanBar = document.getElementById("genderFeman")
+
+
+      msgCarrier["body"]['name'] = nameBar.value;
+      msgCarrier["body"]['user_id'] = userIdBar.value;
+      msgCarrier["body"]['card_id'] = cardIdBar.value;
+
+      msgCarrier["body"]['face_img_name'] = mirrorFile.name
+      if (femanBar.checked) {
+        msgCarrier["body"]['gender'] = false
+      } else {
+        msgCarrier["body"]['gender'] = true
+      }
+      //the db's pk is set to auto increase, random int here, it will'n be used
+      msgCarrier["body"]['pk'] = 0
+      //send user data through websocket
+      console.log(msgCarrier)
+      Socket.send(JSON.stringify(msgCarrier))
+    }
+  </script>
+  <script src="/static/js/jquery.js"></script>
+  <script src="/static/js/bootstrap.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=9">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>faceMang</title>
+    <link href="/static/css/bootstrap.css" rel="stylesheet">
+    <link href="/static/css/font-awesome.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-offset-5">
+                <button>
+                    <a href="/logout">退出</a>
+                </button>
+                <button>
+                    <a href="/faceSign">人脸注册</a>
+                </button>
+                <button>
+                    <a href="/#">数据库管理</a>
+                </button>
+                <select id="connectedDevice">
+                    <option>200dk0 </option>
+                </select>
+            </div>
+        </div>
+        <div class="row" style="height: 90vh;">
+            <div class="col-md-5 border rounded" style="margin-right: 5px;">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+
+                        <span class="input-group-text">时间</span>
+                    </div>
+                    <input type="text" id="time" class="form-control" placeholder="time" readonly autofocus>
+                </div>
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+
+                        <span class="input-group-text">姓名</span>
+                    </div>
+                    <input type="text" id="name" class="form-control" placeholder="姓名" readonly>
+                </div>
+
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">学号/学工号</span>
+                    </div>
+                    <input type="text" id="userID" class="form-control" placeholder="学号/学工号" readonly>
+                </div>
+
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">IC卡号</span>
+                    </div>
+                    <input type="text" id="cardId" class="form-control" placeholder="IC卡ID" readonly>
+                </div>
+
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">人脸图像</span>
+                    </div>
+                    <img id="faceimg" height="100px" src="#">
+                </div>
+
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">性别</span>
+                    </div>
+                    <div class="form-control " id="gender">
+                        <label for="genderMan">男</label>
+                        <input type="radio" id="genderMan" name="gender" value="1" checked>
+                        <label for="genderFeman">女</label>
+                        <input type="radio" id="genderFeman" name="gender" value="0">
+                    </div>
+                </div>
+
+                <!-- <div class="border rounded">识别状态:
+                    <p id="regStatus">闲置</p>
+                </div> -->
+            </div>
+            <div class="col-md-6 border rounded">
+                <div>视频流显示</div>
+            </div>
+        </div>
+    </div>
+    <script>
+        //刷新设备连接数
+        const HardwareType = {
+            DEFAULT: 0,
+            CAMERA: 1,
+            IDREADER: 2,
+            ATLAS200: 3,
+            WEBUI: 4,
+            GATEMANG: 5,
+            MOTOR: 6,
+        }
+        const MessageCtlType = {
+            NULLMESSAGE: 0,
+            CARDID: 1,
+            USERID: 2,
+            GATECONTROL: 3,
+            NEWUSER: 4,
+            REFLASHIC : 5,
+            CONTINUE: 6,
+            AUTH: 7,
+            USERDATA: 8,
+            SHOWUSER: 9,
+            USERPK: 10,
+        }
+        const url = "ws://192.168.1.229:8080/ws"
+        const imgUrl = 'http://192.168.1.229:8080/img'
+        const poolID = "123456"
+        var webUIInfo = {
+            "poolID": poolID,
+            "hwType": HardwareType.WEBUI
+        }
+        var messageCarrier = {
+            "ctlType": MessageCtlType.NULLMESSAGE,
+            "body": ""
+        }
+
+        var Socket = new WebSocket(url);
+        // send auth info
+        Socket.onopen = function () {
+            Socket.send(JSON.stringify(webUIInfo))
+        }
+        Socket.addEventListener('message', function (event) {
+            MsgRcvd(event.data)
+
+        });
+
+
+        let nameBar = document.getElementById("name")
+        let userIdBar = document.getElementById("userID")
+        let cardIdBar = document.getElementById("cardId")
+        let timeBar = document.getElementById('time')
+        let faceBar = document.getElementById("faceimg")
+        let femanBar = document.getElementById("genderFeman")
+        let manBar = document.getElementById("genderMan")
+
+        function reqImg(imgName) {
+            var xhr = new XMLHttpRequest();
+            xhr.responseType = "blob";
+            xhr.open('POST', imgUrl, true);
+
+            // var FD = new FormData();
+            // FD.append("face_img_name", imgName)
+
+            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest#using_nothing_but_xmlhttprequest
+
+            xhr.send("face_img_name=" + imgName);
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4) { // 读取完成
+                    if (xhr.status == 200) {
+                        faceBar.src = window.URL.createObjectURL(xhr.response);
+                    }
+                }
+            }
+        }
+
+        function MsgRcvd(msgData) {
+            let msg = JSON.parse(msgData);
+            timeBar.value = new Date().toLocaleString()
+            switch (msg['ctlType']) {
+                case 9:
+                    //msg liks 
+                    /*
+                    {"ctlType":9,"body":{"pk":7,"name":"kksdwadssawk","user_id":"201ddwadwa8213","card_id":"74-95-10-176","gender":false,"face_img_name":"ybyab.jpg"}}
+                    */
+                    nameBar.value = msg["body"]['name'];
+                    userIdBar.value = msg["body"]['user_id'];
+                    cardIdBar.value = msg["body"]['card_id'];
+                    if (msg["body"]['gender']) {
+                        femanBar.checked = true
+                    } else {
+                        manBar.checked = true
+                    }
+                    //TODO 发起图片请求?
+                    reqImg(msg["body"]["face_img_name"])
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    </script>
+    <script src="/static/js/jquery.js"></script>
+    <script src="/static/js/bootstrap.js"></script>
+</body>
+
+</html>

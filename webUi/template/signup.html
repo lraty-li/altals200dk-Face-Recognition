@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=9">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>signup</title>
+    <link href="/static/css/bootstrap.css" rel="stylesheet">
+    <link href="/static/css/font-awesome.css" rel="stylesheet">
+</head>
+
+<body>
+  <div class="container">
+    <div class="row">
+        <div class="col-md-offset-5 col-md-3">
+          <form class="form-signin" role="form" action="/signup_account" method="post">
+            <h2 class="form-signin-heading">
+              <i class="fa fa-comments-o">
+                signup
+              </i>
+            </h2>
+            <div class="lead">注册新账户</div>
+            <input id="name" type="text" name="name" class="form-control" placeholder="Name" required autofocus>
+            <input type="email" name="email" class="form-control" placeholder="Email address" required>
+            <input type="password" name="password" class="form-control" placeholder="Password" required>
+            <button class="btn btn-lg btn-primary btn-block" type="submit">提交注册</button>
+          </form>
+        </div>
+    </div>
+</div>
+    
+
+    <script src="/static/js/jquery.js"></script>
+    <script src="/static/js/bootstrap.js"></script>
+</body>
+
+</html>

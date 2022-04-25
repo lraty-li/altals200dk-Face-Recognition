@@ -1,0 +1,16 @@
+{
+  "App": {
+    "Address": "0.0.0.0:8081",
+    "Static": "public",
+    "Log": "logs",
+    "Locale": "locales",
+    "Language": "en"
+  },
+  "Db": {
+    "Driver": "mysql",
+    "Address": "localhost:3306",
+    "Database": "facebackend",
+    "User": "",
+    "Password": ""
+  }
+}
